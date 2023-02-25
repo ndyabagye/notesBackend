@@ -36,6 +36,7 @@ class UserController extends Controller
         $validated['password'] = Hash::make($validated['password']);
 
         $user = User::create($validated);
+        dd($user);
 
         return new UserResource($user);
     }
