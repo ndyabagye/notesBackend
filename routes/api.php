@@ -9,6 +9,9 @@ use App\Http\Controllers\Api\NotesController;
 use App\Http\Controllers\Api\UserAllNotesController;
 use App\Http\Controllers\Api\NotesAllTagsController;
 use App\Http\Controllers\Api\TagsAllNotesController;
+use App\Models\User;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Hash;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,6 +25,7 @@ use App\Http\Controllers\Api\TagsAllNotesController;
 */
 
 Route::post('/login', [AuthController::class, 'login'])->name('api.login');
+Route::post('/register', [AuthController::class, 'register'])->name('api.register');
 
 Route::middleware('auth:sanctum')
     ->get('/user', function (Request $request) {
@@ -75,4 +79,22 @@ Route::name('api.')
             TagsAllNotesController::class,
             'destroy',
         ])->name('all-tags.all-notes.destroy');
+    });
+
+    Route::post('/sanctum/token', function (Request $request) {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+            'device_name' => 'required',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        return $user->createToken($request->device_name)->plainTextToken;
     });
